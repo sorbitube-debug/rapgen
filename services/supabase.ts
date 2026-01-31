@@ -1,15 +1,12 @@
-
 import { createClient } from '@supabase/supabase-js';
 
-// IMPORTANT: Credentials provided by the user
-// Fix: Explicitly type as string to prevent TypeScript from using literal types which causes errors in comparison logic.
-const supabaseUrl: string = 'https://sucwedodpggljuhxksxj.supabase.co';
-// Fix: Explicitly type as string to prevent TypeScript from using literal types which causes errors in comparison logic.
-const supabaseAnonKey: string = 'sb_publishable_ywEszOqaL_kefiKTB3fmPQ_AEPLSfyK';
+// خواندن از .env.local (مقادیر در vite.config از env لود و در بیلد جایگزین می‌شوند)
+const supabaseUrl: string = (process.env.SUPABASE_URL as string) || '';
+const supabaseAnonKey: string = (process.env.SUPABASE_KEY as string) || '';
 
-// Check if credentials are still the placeholders (safety check)
-export const isSupabaseConfigured = 
-  supabaseUrl !== 'https://YOUR_PROJECT_ID.supabase.co' && 
+export const isSupabaseConfigured =
+  Boolean(supabaseUrl && supabaseAnonKey) &&
+  supabaseUrl !== 'https://YOUR_PROJECT_ID.supabase.co' &&
   supabaseAnonKey !== 'YOUR_ANON_KEY';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

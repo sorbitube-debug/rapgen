@@ -155,9 +155,13 @@ export const dispatchRapLyrics = async (
   const data = await response.json();
   
   // Hugging Face and some others return differently
-  const content = config.provider === 'huggingface' 
-    ? data[0]?.generated_text 
-    : data.choices[0].message.content;
+  const content = config.provider === 'huggingface'
+    ? data[0]?.generated_text
+    : data.choices?.[0]?.message?.content;
+
+  if (content == null || content === '') {
+    throw new Error('خروجی خالی از سرویس AI دریافت شد.');
+  }
 
   try {
     const result = JSON.parse(content);
@@ -195,12 +199,12 @@ export const dispatchRegenerateLines = async (
     const endpoint = config.baseUrl || PROVIDER_DEFAULTS[config.provider]?.baseUrl || '';
     if (!endpoint) return fullContent;
 
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (config.apiKey) headers['Authorization'] = `Bearer ${config.apiKey}`;
+
     const response = await fetch(endpoint, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${config.apiKey || ""}`
-        },
+        headers,
         body: JSON.stringify({
             model: config.modelId,
             messages: [
@@ -210,6 +214,10 @@ export const dispatchRegenerateLines = async (
         })
     });
 
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || fullContent;
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        const errMsg = (data as { error?: { message?: string } })?.error?.message || response.statusText;
+        throw new Error(`خطای API: ${errMsg}`);
+    }
+    return data.choices?.[0]?.message?.content ?? fullContent;
 };
